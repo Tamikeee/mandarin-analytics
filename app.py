@@ -22,7 +22,7 @@ st.caption("Версия 2.0. Строгий монохромный режим. 
 
 st.markdown("---")
 
-# Фиксированные константы по вашему запросу (только 60)
+# Фиксированные константы (только 60)
 FIXED_COVERAGE = 60       # Процент покрытия сети жестко равен 60%
 FIXED_MOTO_HOURS = 60     # Базовая нагрузка погрузчиков жестко равна 60 часам в неделю
 
@@ -38,61 +38,68 @@ except Exception:
     real_seasonality_ratio = 4.15
     data_status = "Используются базовые системные коэффициенты ритейла (файл data.csv не найден)."
 
-# СЕТКА ИНТЕРФЕЙСА: Слева параметры, справа аналитика
-col_left, col_right = st.columns()
+# Разделяем интерфейс на вкладки
+tab1, tab2 = st.tabs(["🚛 Цепочки поставок фрэш-продукции", "🚜 Телеметрия и износ парка погрузчиков"])
 
-with col_left:
-    st.subheader("ПАРАМЕТРЫ РАСЧЕТА")
-    retail_network = st.selectbox("Торговая сеть", ["X5 Group", "Магнит"])
-    product_category = st.selectbox("Номенклатурная группа", ["Мандарины (Марокко)", "Мандарины (Египет)", "Мандарины (Турция)"])
-    
-    st.markdown("---")
-    date_start = datetime.date(2026, 11, 1)
-    date_end = datetime.date(2027, 1, 31)
-    st.text(f"Начало периода: {date_start.strftime('%d.%m.%Y')}")
-    st.text(f"Конец периода: {date_end.strftime('%d.%m.%Y')}")
-    st.text(f"Покрытие розничной сети: {FIXED_COVERAGE}% (зафиксировано)")
-    
-    st.markdown("---")
-    st.caption(data_status)
+# ==========================================
+# ВКЛАДКА 1: РИТЕЙЛ (X5 / МАГНИТ)
+# ==========================================
+with tab1:
+    col_left, col_right = st.columns(2)
 
-with col_right:
-    st.subheader("ПРОГНОЗНЫЕ ПОКАЗАТЕЛИ СНАБЖЕНИЯ")
-    
-    base_stores = 25000 if "X5" in retail_network else 28000
-    shipping_days = 16 if "Марокко" in product_category else (10 if "Египет" in product_category else 7)
-    
-    # Расчет объема с учетом фиксированного покрытия 60%
-    active_stores = int(base_stores * (FIXED_COVERAGE / 100))
-    calculated_tons = int((active_stores * 45 * 92 * (real_seasonality_ratio / 3)) / 1000)
-    order_deadline = date_start - datetime.timedelta(days=shipping_days)
-    
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Целевой объем закупки", f"{calculated_tons:,} тонн")
-    m2.metric("Расчетное плечо доставки", f"{shipping_days} суток")
-    m3.metric("Крайний срок размещения заказа", order_deadline.strftime("%d.%m.%Y"))
-    
-    st.markdown("---")
-    st.subheader("График распределения суточной потребности (тонны)")
-    
-    days_count = (date_end - date_start).days
-    np.random.seed(42)
-    timeline = [date_start + datetime.timedelta(days=x) for x in range(days_count)]
-    
-    volumes = []
-    for day in timeline:
-        base = (active_stores * 45) / 1000
-        coef = real_seasonality_ratio if day.month == 12 and day.day > 15 else (real_seasonality_ratio * 0.5 if day.month == 12 else 1.0)
-        volumes.append(base * coef + np.random.normal(0, base * 0.05))
+    with col_left:
+        st.subheader("ПАРАМЕТРЫ РАСЧЕТА")
+        retail_network = st.selectbox("Торговая сеть", ["X5 Group", "Магнит"])
+        product_category = st.selectbox("Номенклатурная группа", ["Мандарины (Марокко)", "Мандарины (Египет)", "Мандарины (Турция)"])
         
-    df_chart = pd.DataFrame({"Объем поставки (т)": volumes}, index=[d.strftime("%d.%m") for d in timeline])
-    st.line_chart(df_chart, color="#555555")
+        st.markdown("---")
+        date_start = datetime.date(2026, 11, 1)
+        date_end = datetime.date(2027, 1, 31)
+        st.text(f"Начало периода: {date_start.strftime('%d.%m.%Y')}")
+        st.text(f"Конец периода: {date_end.strftime('%d.%m.%Y')}")
+        st.text(f"Покрытие розничной сети: {FIXED_COVERAGE}% (зафиксировано)")
+        
+        st.markdown("---")
+        st.caption(data_status)
 
-st.markdown("---")
+    with col_right:
+        st.subheader("ПРОГНОЗНЫЕ ПОКАЗАТЕЛИ СНАБЖЕНИЯ")
+        
+        base_stores = 25000 if "X5" in retail_network else 28000
+        shipping_days = 16 if "Марокко" in product_category else (10 if "Египет" in product_category else 7)
+        
+        # Расчет объема с учетом фиксированного покрытия 60%
+        active_stores = int(base_stores * (FIXED_COVERAGE / 100))
+        calculated_tons = int((active_stores * 45 * 92 * (real_seasonality_ratio / 3)) / 1000)
+        order_deadline = date_start - datetime.timedelta(days=shipping_days)
+        
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Целевой объем закупки", f"{calculated_tons:,} тонн")
+        m2.metric("Расчетное плечо доставки", f"{shipping_days} суток")
+        m3.metric("Крайний срок размещения заказа", order_deadline.strftime("%d.%m.%Y"))
+        
+        st.markdown("---")
+        st.subheader("График распределения суточной потребности (тонны)")
+        
+        days_count = (date_end - date_start).days
+        np.random.seed(42)
+        timeline = [date_start + datetime.timedelta(days=x) for x in range(days_count)]
+        
+        volumes = []
+        for day in timeline:
+            base = (active_stores * 45) / 1000
+            coef = real_seasonality_ratio if day.month == 12 and day.day > 15 else (real_seasonality_ratio * 0.5 if day.month == 12 else 1.0)
+            volumes.append(base * coef + np.random.normal(0, base * 0.05))
+            
+        df_chart = pd.DataFrame({"Объем поставки (т)": volumes}, index=[d.strftime("%d.%m") for d in timeline])
+        st.line_chart(df_chart, color="#555555")
 
-# РАЗДЕЛ ТЕХНИКИ БЕЗ ПОЛЗУНКОВ
-st.subheader("МОНИТОРИНГ ТЕХНИЧЕСКОГО СОСТОЯНИЯ ПАРКА ПОГРУЗЧИКОВ")
-st.text(f"Анализ износа протектора на основе стандартной загрузки: {FIXED_MOTO_HOURS} моточасов в неделю")
+# ==========================================
+# ВКЛАДКА 2: ПОГРУЗЧИКИ БЕЗ ПОЛЗУНКОВ
+# ==========================================
+with tab2:
+    st.header("МОНИТОРИНГ ТЕХНИЧЕСКОГО СОСТОЯНИЯ ПАРКА ПОГРУЗЧИКОВ")
+    st.text(f"Анализ износа протектора на основе стандартной загрузки: {FIXED_MOTO_HOURS} моточасов в неделю")
 
     fleet_data = {
         "Код техники": ["RT-01-TOYOTA", "RT-02-LINDE", "RT-03-JUNG", "RT-04-YALE", "RT-05-TOYOTA"],
@@ -103,5 +110,5 @@ st.text(f"Анализ износа протектора на основе ст�
         "Рекомендованный статус": ["Эксплуатация разрешена", "Эксплуатация разрешена", "ТРЕБУЕТСЯ СРОЧНАЯ ЗАМЕНА", "Новое оборудование", "Плановое ТО через 5 суток"]
     }
 
-df_fleet = pd.DataFrame(fleet_data)
-st.dataframe(df_fleet.style.format({"Коэффициент износа шин (%)": "{:.1f}%"}), use_container_width=True)
+    df_fleet = pd.DataFrame(fleet_data)
+    st.dataframe(df_fleet.style.format({"Коэффициент износа шин (%)": "{:.1f}%"}), use_container_width=True)
