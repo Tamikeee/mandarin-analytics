@@ -15,7 +15,7 @@ st.markdown("""
     .stMetric label { color: #666666 !important; font-size: 14px !important; }
     .stMetric div { color: #111111 !important; font-size: 28px !important; font-weight: 700; }
     </style>
-""", unsafe_allowed_html=True)
+""", unsafe_allow_html=True)
 
 st.title("СИСТЕМА ПРЕДИКТИВНОЙ АНАЛИТИКИ ЦЕПОЧЕК ПОСТАВОК")
 st.caption("Версия 2.0. Строгий монохромный режим. Расчетные параметры зафиксированы.")
