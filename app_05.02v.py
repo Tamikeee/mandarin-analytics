@@ -79,7 +79,10 @@ with tab1:
             <div id="map"></div>
             <script>
                 var map = L.map('map').setView([{lat}, {lon}], 7);
-                L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{ maxZoom: 18 }}).addTo(map);
+                L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+}}).addTo(map);
                 var marker = L.circleMarker([{lat}, {lon}], {{ color: '#ff4b4b', fillColor: '#ff4b4b', fillOpacity: 0.9, radius: 8 }}).addTo(map);
                 marker.bindPopup("<b>{ship_name}</b><br>Назначение: {dest}").openPopup();
             </script>
