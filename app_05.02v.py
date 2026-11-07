@@ -41,13 +41,12 @@ with tab1:
     days_count = metrics['total_shipping_days']
     dates_list = [datetime.date(2026, 11, 1) + datetime.timedelta(days=i) for i in range(days_count)]
     
-    # Генерация плавного нормального распределения поставок без разрывов
     base_tonnage = metrics['active_stores'] * 1.8
     demand_curve = [float(base_tonnage * np.exp(-((i - days_count/2)**2) / (2 * (days_count/4)**2))) for i in range(days_count)]
     df_chart = pd.DataFrame({"Тонны": demand_curve}, index=[d.strftime("%d.%m") for d in dates_list])
     st.line_chart(df_chart)
 
-    # Спутниковый трекер контейнеровоза с живой интерполяцией на карте
+    # Спутниковый трекер контейнеровоза
     if "Марокко" in supplier:
         st.markdown("---")
         st.subheader("🚢 Спутниковый трекинг контейнеровоза (MSC NEDERLAND III)")
@@ -66,7 +65,7 @@ with tab1:
             status_msg = "🟢 РЕЖИМ LIVE: Ключ найден, данные синхронизированы со спутником через VesselFinder API."
         else:
             ship_name = "MSC NEDERLAND III (IMO: 8918954)"
-            lat, lon = 30.4223, -9.6371  # Порт Агадир (реальная стартовая точка)
+            lat, lon = 30.4223, -9.6371  # Порт Агадир
             speed, course = 15.0, 340.0
             dest = "ANTWERP (BE ANR)"
             eta = "01.11.2026 10:00"
@@ -74,47 +73,47 @@ with tab1:
 
         st.caption(status_msg)
         
-        # Интерактивная карта Leaflet с плавной интерполяцией координат и нейтральной подложкой CartoDB
-        html_map_code = f"""
+        # Безопасный шаблон карты без конфликтов f-строк с JS/CSS
+        html_template = """
         <!DOCTYPE html>
         <html>
         <head>
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <style>
-                #map {{ width: 100%; height: 420px; border-radius: 8px; }}
-                body {{ margin: 0; padding: 0; }}
+                #map { width: 100%; height: 420px; border-radius: 8px; }
+                body { margin: 0; padding: 0; }
             </style>
         </head>
         <body>
             <div id="map"></div>
             <script>
-                var startLat = {lat};
-                var startLon = {lon};
-                var speedKnots = {speed};
-                var courseDegrees = {course};
+                var startLat = __LAT__;
+                var startLon = __LON__;
+                var speedKnots = __SPEED__;
+                var courseDegrees = __COURSE__;
 
                 var map = L.map('map').setView([startLat, startLon], 7);
-                L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                     maxZoom: 18,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                }}).addTo(map);
+                }).addTo(map);
 
-                var shipMarker = L.circleMarker([startLat, startLon], {{
+                var shipMarker = L.circleMarker([startLat, startLon], {
                     color: '#ff4b4b',
                     fillColor: '#ff4b4b',
                     fillOpacity: 0.9,
                     radius: 8
-                }}).addTo(map);
+                }).addTo(map);
                 
-                shipMarker.bindPopup("<b>{ship_name}</b><br>Назначение: {dest}").openPopup();
+                shipMarker.bindPopup("<b>__SHIP_NAME__</b><br>Назначение: __DEST__").openPopup();
 
                 var currentLat = startLat;
                 var currentLon = startLon;
 
-                function moveShip() {{
+                function moveShip() {
                     var speedMetersPerSecond = speedKnots * 0.514444;
-                    var timeStep = {1 if api_data else 50}; 
+                    var timeStep = 50; 
                     var distanceMoved = speedMetersPerSecond * timeStep;
 
                     var earthRadius = 6378137;
@@ -130,13 +129,23 @@ with tab1:
                     currentLon += (deltaLon * 180) / Math.PI;
 
                     shipMarker.setLatLng([currentLat, currentLon]);
-                    map.panTo([currentLat, currentLon], {{animate: true, duration: 0.5}});
+                    map.panTo([currentLat, currentLon], {animate: true, duration: 0.5});
                 }
                 setInterval(moveShip, 1000);
             </script>
         </body>
         </html>
         """
+        
+        html_map_code = (html_template
+            .replace("__LAT__", str(lat))
+            .replace("__LON__", str(lon))
+            .replace("__SPEED__", str(speed))
+            .replace("__COURSE__", str(course))
+            .replace("__SHIP_NAME__", str(ship_name))
+            .replace("__DEST__", str(dest))
+        )
+        
         st.components.v1.html(html_map_code, height=440)
 
 with tab2:
