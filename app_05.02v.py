@@ -3,7 +3,7 @@ import datetime
 import pandas as pd
 import numpy as np
 
-# Импорт наших чистых модулей
+# Импорт чистых модулей из папки core
 from core.vessel_api import fetch_vessel_data, get_vessel_api_key
 from core.analytics import calculate_supply_chain
 
@@ -63,7 +63,7 @@ with tab1:
 
         st.caption(status_msg)
         
-        # Рендер карты Leaflet
+        # Рендер карты Leaflet с нейтральной подложкой CartoDB Voyager и исправленными путями
         html_map_code = f"""
         <!DOCTYPE html>
         <html>
@@ -80,9 +80,9 @@ with tab1:
             <script>
                 var map = L.map('map').setView([{lat}, {lon}], 7);
                 L.tileLayer('https://{{s}}.basemaps.cartocdn.com/rastertiles/voyager/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-}}).addTo(map);
+                    maxZoom: 18,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                }}).addTo(map);
                 var marker = L.circleMarker([{lat}, {lon}], {{ color: '#ff4b4b', fillColor: '#ff4b4b', fillOpacity: 0.9, radius: 8 }}).addTo(map);
                 marker.bindPopup("<b>{ship_name}</b><br>Назначение: {dest}").openPopup();
             </script>
